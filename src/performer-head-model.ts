@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { modelLoader, toFloatAttributes } from './gltf-loader.js';
 
 /*
  * AI 로 만든 공연자 머리.
@@ -82,7 +82,7 @@ function blendFrontProjection(material: THREE.MeshStandardMaterial, front: THREE
 export async function loadHeadModel(): Promise<HeadModel> {
   const base = import.meta.env.BASE_URL;
   const [gltf, front] = await Promise.all([
-    new GLTFLoader().loadAsync(`${base}models/performer-head.glb`),
+    modelLoader.loadAsync(`${base}models/performer-head.glb`),
     new THREE.TextureLoader().loadAsync(`${base}models/performer-head-front.jpg`),
   ]);
   front.colorSpace = THREE.SRGBColorSpace;
@@ -96,6 +96,7 @@ export async function loadHeadModel(): Promise<HeadModel> {
 
   mesh.updateMatrixWorld(true);
   const geo = mesh.geometry.clone();
+  toFloatAttributes(geo);
   geo.applyMatrix4(mesh.matrixWorld);
   geo.computeBoundingBox();
   const bb = geo.boundingBox!;

@@ -54,7 +54,8 @@ const COMPOSITE = {
   `,
 };
 
-export function createVideoWall(): VideoWall {
+/** @param maskScale 마스크 해상도 배율 — 폰에서는 더 낮춘다 */
+export function createVideoWall(maskScale = MASK_SCALE): VideoWall {
   const css = new CSS3DRenderer();
   const root = css.domElement;
   root.classList.add('video-wall');
@@ -126,7 +127,7 @@ export function createVideoWall(): VideoWall {
     },
     resize(w, h) {
       css.setSize(w, h);
-      maskRT.setSize(Math.max(1, Math.round(w * MASK_SCALE)), Math.max(1, Math.round(h * MASK_SCALE)));
+      maskRT.setSize(Math.max(1, Math.round(w * maskScale)), Math.max(1, Math.round(h * maskScale)));
     },
   };
 }

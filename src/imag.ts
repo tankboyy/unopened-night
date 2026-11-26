@@ -46,7 +46,8 @@ export interface Imag {
   render(renderer: THREE.WebGLRenderer, scene: THREE.Scene): void;
 }
 
-export function createImag(): Imag {
+/** @param everyNthFrame 중계 장면을 몇 프레임에 한 번 그릴지 — 폰에서는 3 */
+export function createImag(everyNthFrame = 2): Imag {
   const group = new THREE.Group();
   const rt = new THREE.WebGLRenderTarget(RT_W, RT_H, { samples: 2 });
   rt.texture.colorSpace = THREE.SRGBColorSpace;
@@ -118,7 +119,7 @@ export function createImag(): Imag {
     },
     render(renderer, scene) {
       frameNo++;
-      if (frameNo % 2) return;
+      if (frameNo % everyNthFrame) return;
       const prev = renderer.getRenderTarget();
       renderer.setRenderTarget(rt);
       renderer.render(scene, cam);

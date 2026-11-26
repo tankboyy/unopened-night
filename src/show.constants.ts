@@ -35,7 +35,12 @@ export const STAND_LIGHTS = 9_000;
 
 /** 방문자가 스크롤을 멈췄다고 보는 시간 — 이만큼 조용하면 멈춘 자리부터 노래를 다시 튼다 */
 export const SCRUB_SETTLE_MS = 350;
-/** 지점 사이를 걷는 데 쓰는 시간 */
-export const WALK_SECONDS = 3.2;
+/** 무대 위를 걷는 속도(m/s) — 런웨이가 36m 라 고정 시간으로 걸으면 뛰어다니는 것처럼 보였다 */
+export const WALK_SPEED_MPS = 3.5;
+/** 아무리 가까워도 걷는 데 이만큼은 쓴다 */
+export const WALK_MIN_SECONDS = 1.5;
+/** 하이라이트 몇 초 전에 앞으로 나와 있을지, 몇 초 동안 머물지 */
+export const HIGHLIGHT_LEAD_SEC = 3;
+export const HIGHLIGHT_HOLD_SEC = 9;
 
 export const MOBILE_BREAKPOINT_PX = 760;

@@ -43,7 +43,9 @@ const $ = <T extends HTMLElement>(sel: string): T => {
 const canvas = $<HTMLCanvasElement>('#gl');
 // alpha: 영상 벽 자리에 투명한 구멍을 뚫어 캔버스 뒤 YouTube 층이 비치게 한다(video-wall.ts)
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+/** 폰: 장면을 세 번(중계·마스크·본 화면) 그리므로 해상도·주기를 낮춘다 */
+const MOBILE = innerWidth < MOBILE_BREAKPOINT_PX;
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, MOBILE ? 1.5 : 2));
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#05060a');
 // 연무: 가까운 곳부터 옅게 깔아 빔과 원경이 공기에 묻히게 한다
@@ -70,7 +72,7 @@ const pyro = createPyro(stageSet.pyroSpots, stageSet.sparkCurtain);
 toFxLayer(pyro.group);
 scene.add(pyro.group);
 toFxLayer(stadium.standLights);
-const imag = createImag();
+const imag = createImag(MOBILE ? 3 : 2);
 scene.add(imag.group);
 const smash = createSmash(canvas, (e) => {
   pyro.burstAt(e.at, Math.min(1.6, e.speed / 7));
@@ -84,7 +86,7 @@ composer.addPass(new RenderPass(scene, camera));
 composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.35, 0.62));
 composer.addPass(new OutputPass());
 
-const videoWall = createVideoWall();
+const videoWall = createVideoWall(MOBILE ? 0.35 : 0.5);
 scene.add(videoWall.holeMesh);
 composer.addPass(videoWall.compositePass);
 
@@ -301,7 +303,6 @@ function showSong(i: number): void {
 // ─── 부트 ───
 async function boot(): Promise<void> {
   const loadingText = $('#loadingText');
-  const mobile = innerWidth < MOBILE_BREAKPOINT_PX;
   const [performerAvatar, crowdAvatars, headModel, bodyModel] = await Promise.all([
     loadAvatar(PERFORMER_AVATAR_ID),
     loadCrowdAvatars(),
@@ -314,9 +315,9 @@ async function boot(): Promise<void> {
   const performer = createPerformer(performerAvatar, headModel, bodyModel);
   scene.add(performer.root);
   const crowd = createCrowd(crowdAvatars, {
-    nearCount: mobile ? NEAR_CROWD_MOBILE : NEAR_CROWD_DESKTOP,
-    farCount: mobile ? FAR_CROWD_MOBILE : FAR_CROWD_DESKTOP,
-    silhouetteCount: mobile ? SIL_CROWD_MOBILE : SIL_CROWD_DESKTOP,
+    nearCount: MOBILE ? NEAR_CROWD_MOBILE : NEAR_CROWD_DESKTOP,
+    farCount: MOBILE ? FAR_CROWD_MOBILE : FAR_CROWD_DESKTOP,
+    silhouetteCount: MOBILE ? SIL_CROWD_MOBILE : SIL_CROWD_DESKTOP,
     glow,
   });
   scene.add(crowd.group);

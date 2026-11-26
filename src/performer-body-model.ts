@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { modelLoader, toFloatAttributes } from './gltf-loader.js';
 import { stageReadyMaterial } from './performer-head-model.js';
 
 /*
@@ -27,7 +27,7 @@ export interface BodyModel {
 }
 
 export async function loadBodyModel(): Promise<BodyModel> {
-  const gltf = await new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/performer-body.glb`);
+  const gltf = await modelLoader.loadAsync(`${import.meta.env.BASE_URL}models/performer-body.glb`);
   let mesh: THREE.Mesh | null = null;
   gltf.scene.traverse((o) => {
     if (!mesh && (o as THREE.Mesh).isMesh) mesh = o as THREE.Mesh;
@@ -36,6 +36,7 @@ export async function loadBodyModel(): Promise<BodyModel> {
   const m = mesh as THREE.Mesh;
   m.updateMatrixWorld(true);
   const geometry = m.geometry.clone();
+  toFloatAttributes(geometry);
   geometry.applyMatrix4(m.matrixWorld);
   return { geometry, material: stageReadyMaterial(m.material as THREE.Material, '#202020') };
 }
