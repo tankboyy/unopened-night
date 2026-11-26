@@ -16,7 +16,8 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: var(--night); color: var(--ink); font: 16px/1.7 var(--body); overflow-x: hidden; }
+/* 한국어는 단어(어절) 단위로 줄을 바꾼다 — 기본값이면 "열리지 않/은 밤"처럼 글자 중간에서 끊긴다 */
+body { background: var(--night); color: var(--ink); font: 16px/1.7 var(--body); overflow-x: hidden; word-break: keep-all; overflow-wrap: anywhere; }
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
 body[data-phase='show'] #gl { cursor: grab; touch-action: pan-y; }
 
