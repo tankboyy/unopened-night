@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>열리지 않은 밤</title>
+  <meta name="description" content="연기된 2026년 10월 2일 고양 공연이 열렸다면 어땠을지 따라가는 팬 제작 랜딩 페이지">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body data-phase="ticket">
+  <canvas id="gl" aria-label="고양종합운동장 공연 3D 장면"></canvas>
+
+  <div class="loading" id="loading" role="status">
+    <span class="loading-title">열리지 않은 밤</span>
+    <span id="loadingText">관객 입장 중…</span>
+  </div>
+
+  <div class="ff-badge" aria-hidden="true">⏩ 빨리감기</div>
+  <div class="hud" aria-hidden="true"><span id="hudTime">10.02 FRI 16:00</span><span>GOYANG STADIUM</span></div>
+
+  <!-- 공연 구간에서만 보이는 조작 UI -->
+  <aside class="show-ui show-left card" aria-label="세트리스트">
+    <div class="title">SETLIST<small>2026 스타디움 투어 · 22곡</small></div>
+    <ol class="setlist" id="setlist"></ol>
+  </aside>
+  <aside class="show-ui show-right card now" aria-label="지금 재생 중">
+    <span class="label">NOW PLAYING · <span id="songNo">1 / 22</span></span>
+    <span class="song" id="nowSong">—</span>
+    <span class="feat" id="nowFeat"></span>
+    <button type="button" class="play" id="playBtn">▶ 소리 켜고 보기</button>
+    <span class="hint smash-hint" id="smashHint" hidden>기타를 잡아(끌어) 높이 들었다가 무대 바닥에 세게 내리치세요!</span>
+    <span class="hint">노래는 무대 뒤 화면(YouTube 공식 영상)으로 나와요. 스크롤을 내리면 빨리감기처럼 곡이 넘어가고, 멈춘 곳부터 다시 재생돼요.</span>
+  </aside>
+  <div class="show-ui show-bar card group" role="group" aria-label="시점">
+    <span class="gl">시점</span>
+    <button type="button" data-cam="stand" aria-pressed="true">스탠딩</button>
+    <button type="button" data-cam="close" aria-pressed="false">무대 앞</button>
+    <button type="button" data-cam="seat" aria-pressed="false">2층 지정석</button>
+    <button type="button" data-cam="all" aria-pressed="false">전체</button>
+    <button type="button" class="smash" id="smashBtn">🎸 기타 부수기</button>
+    <span class="keys">WASD 이동 · 끌어서 둘러보기 · Q/E 아래위 · Shift 빠르게</span>
+  </div>
+
+  <main class="story">
+    <section class="scene" data-phase="ticket">
+      <span class="time">16:00 · 출발 전</span>
+      <h1>열리지 않은 밤</h1>
+      <p>2026년 10월 2일 금요일, 고양종합운동장. 그날 밤이 원래대로 열렸다면 어땠을지, 스크롤로 다시 걸어 봅니다.</p>
+      <div class="ticket" id="ticket">
+        <div class="ticket-main">
+          <div class="tour">THE BIG STADIUM WORLD TOUR<br>IN SEOUL</div>
+          <dl>
+            <dt>날짜</dt><dd>2026.10.02 (금)</dd>
+            <dt>장소</dt><dd>고양종합운동장</dd>
+            <dt>좌석</dt><dd>그라운드 스탠딩 (상상)</dd>
+          </dl>
+          <span class="status" id="ticketStatus">상태: 연기됨</span>
+        </div>
+        <div class="stub">ADMIT ONE</div>
+        <div class="stamp" id="stamp" tabindex="0" role="button" aria-label="연기 도장. 끌어서 떼어 내거나 Enter 키를 누르세요">연기<small>POSTPONED</small></div>
+      </div>
+      <span class="hint">도장을 끌어서 떼어 내고, 아래로 내려 입장하세요</span>
+    </section>
+
+    <section class="scene" data-phase="entry">
+      <span class="time">18:30 · 입장</span>
+      <h2>운동장이 사람으로<br>차오른다</h2>
+      <p>스탠딩 구역 앞줄부터 2층 끝자리까지. 처음 보는 옆 사람과 오늘 첫 곡을 맞혀 봅니다.</p>
+    </section>
+
+    <section class="scene" data-phase="blackout">
+      <span class="time">19:58 · 암전</span>
+      <h2>조명이 꺼지면<br>폰을 꺼내세요</h2>
+      <p>4만 개의 불빛이 하나씩 켜집니다.</p>
+    </section>
+
+    <section class="scene show" data-phase="show">
+      <span class="time">20:00 · 본공연</span>
+      <h2>Texas Tea로<br>문이 열린다</h2>
+      <p>소리를 켜면 노래에 맞춰 화면이 저절로 흘러가요. 스크롤을 내리면 빨리감기, 세트리스트를 누르면 그 곡으로 바로 갑니다. 마지막 곡이 끝나면 밤도 끝나요.</p>
+    </section>
+
+    <section class="scene" data-phase="lights">
+      <span class="time">22:40 · 객석 조명</span>
+      <h2>불이 켜지고 나서야<br>알게 됩니다</h2>
+      <div class="notice">
+        <span class="head">공지 · 2026.08.27 · 라이브네이션코리아</span>
+        <p>2026년 10월 2일(금) 고양종합운동장 공연은 <b>연기</b>되었습니다. 티켓은 전액 환불되었고, <b>새 일정은 아직 정해지지 않았습니다.</b></p>
+      </div>
+      <p>이 밤은 열리지 않았습니다. 그래도 그 자리에 서 있었을 사람들이 있어요.</p>
+      <form class="ticket-maker" id="ticketForm">
+        <label for="ticketName">티켓에 들어갈 이름 <small>(선택 · 이 기기 안에서만 쓰여요)</small></label>
+        <div class="row">
+          <input id="ticketName" name="ticketName" maxlength="12" placeholder="예: 포스티" autocomplete="off">
+          <button type="submit" class="play">나도 거기 있었다 티켓 만들기</button>
+        </div>
+        <img id="ticketPreview" alt="나도 그날 밤 그 자리에 있었다 티켓 미리보기" hidden>
+        <div class="row" id="ticketActions" hidden>
+          <button type="button" class="play" id="ticketShare">공유하기 / 저장</button>
+          <span class="hint" id="shareStatus"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="credits">팬이 만든 비공식 작업 · 아티스트·주최사와 관계없음 · 음악은 YouTube 공식 영상으로 재생 · 아바타 100 Avatars(CC0) · 세트리스트: 2026-06-09 샬럿 공연(Whiskey Riff 보도)</footer>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
