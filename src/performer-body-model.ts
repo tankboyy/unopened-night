@@ -12,10 +12,17 @@ import { stageReadyMaterial } from './performer-head-model.js';
  * 기준 높이는 메시 경계 상자 비율로 잡는다 — 모델을 다시 뽑아도 상수를 다시 잴 필요가 없게.
  */
 
-/** 위에서부터 이 비율까지(모자~턱)는 버린다. 머리는 performer-head-model 이 맡는다 */
-const NECK_CUT_FROM_TOP = 0.19;
-/** 모자가 바탕 아바타 머리 꼭대기보다 높이 솟은 만큼(미터) — 키 맞출 때 뺀다 */
-const HAT_ABOVE_HAIR_M = 0.06;
+/** 인물별 몸 설정 */
+export interface BodySpec {
+  glb: string;
+  /** 위에서부터 이 비율까지(모자·머리카락~턱)는 버린다. 머리는 performer-head-model 이 맡는다 */
+  neckCutFromTop: number;
+  /** 모자·머리카락이 바탕 아바타 머리 꼭대기보다 높이 솟은 만큼(미터) — 키 맞출 때 뺀다 */
+  aboveHairM: number;
+}
+export const POST_MALONE_BODY: BodySpec = { glb: 'models/performer-body.glb', neckCutFromTop: 0.19, aboveHairM: 0.06 };
+// 묶어 올린 드레드락이 높아 머리 위 여유가 크다
+export const DON_TOLIVER_BODY: BodySpec = { glb: 'models/dt-body.glb', neckCutFromTop: 0.17, aboveHairM: 0.12 };
 /** 가장 가까운 정점 찾기 격자 한 칸(미터) */
 const GRID_CELL_M = 0.06;
 /** 격자 탐색 반경 상한(칸). 팔 끝처럼 대응점이 먼 곳도 이 안에서 끝난다 */
@@ -24,21 +31,22 @@ const GRID_MAX_RING = 6;
 export interface BodyModel {
   geometry: THREE.BufferGeometry;
   material: THREE.MeshStandardMaterial;
+  spec: BodySpec;
 }
 
-export async function loadBodyModel(): Promise<BodyModel> {
-  const gltf = await modelLoader.loadAsync(`${import.meta.env.BASE_URL}models/performer-body.glb`);
+export async function loadBodyModel(spec: BodySpec): Promise<BodyModel> {
+  const gltf = await modelLoader.loadAsync(`${import.meta.env.BASE_URL}${spec.glb}`);
   let mesh: THREE.Mesh | null = null;
   gltf.scene.traverse((o) => {
     if (!mesh && (o as THREE.Mesh).isMesh) mesh = o as THREE.Mesh;
   });
-  if (!mesh) throw new Error('[body] performer-body.glb has no mesh');
+  if (!mesh) throw new Error(`[body] ${spec.glb} has no mesh`);
   const m = mesh as THREE.Mesh;
   m.updateMatrixWorld(true);
   const geometry = m.geometry.clone();
   toFloatAttributes(geometry);
   geometry.applyMatrix4(m.matrixWorld);
-  return { geometry, material: stageReadyMaterial(m.material as THREE.Material, '#202020') };
+  return { geometry, material: stageReadyMaterial(m.material as THREE.Material, '#202020'), spec };
 }
 
 interface SkinSource {
@@ -155,10 +163,10 @@ export function skinBodyOnto(avatarScene: THREE.Object3D, body: BodyModel): THRE
   const meshCx = (mb.min.x + mb.max.x) / 2;
   const meshCz = (mb.min.z + mb.max.z) / 2;
   // 팔 폭과 키를 따로 맞춘다 — 생성 모델과 바탕 아바타의 팔 길이 비율이 달라서 한 배율로는 손끝이 어긋난다
-  const sy = (srcH + HAT_ABOVE_HAIR_M) / meshH;
+  const sy = (srcH + body.spec.aboveHairM) / meshH;
   const sx = srcW / (mb.max.x - mb.min.x);
   // 목 위(모자·얼굴)는 버린다 — 세 꼭짓점이 모두 목선 위인 삼각형 제거
-  const neckY = mb.max.y - meshH * NECK_CUT_FROM_TOP;
+  const neckY = mb.max.y - meshH * body.spec.neckCutFromTop;
   const pos = geo.getAttribute('position') as THREE.BufferAttribute;
   const idx = geo.getIndex()!;
   const keep: number[] = [];

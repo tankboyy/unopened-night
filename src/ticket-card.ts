@@ -1,4 +1,4 @@
-import { SETLIST } from './setlist.js';
+import { MAIN_SETLIST } from './setlist.js';
 
 /*
  * 공유 티켓: "2026.10.02 고양, 나는 그날 밤 그 자리에 있었다" 이미지(1080×1350, 인스타그램 세로)를 만든다.
@@ -92,19 +92,22 @@ export async function drawTicket(shot: HTMLCanvasElement, name: string, siteUrl:
   g.fillText(`${who}${name.trim() ? ' 님' : ''}은 그날 밤 그 자리에 있었다`, 80, ty + 150);
   g.font = '26px "Noto Sans KR", sans-serif';
   g.fillStyle = '#6b6660';
-  g.fillText('2026.10.02 (금) · 고양종합운동장 · 그라운드 스탠딩 · 22곡', 80, ty + 196);
+  g.fillText(`2026.10.02 (금) · 고양종합운동장 · 그라운드 스탠딩 · ${MAIN_SETLIST.length}곡`, 80, ty + 192);
+  g.fillStyle = STAMP_RED;
+  g.font = '30px "Bebas Neue", sans-serif';
+  g.fillText('SPECIAL GUEST · DON TOLIVER', 80, ty + 228);
 
   // 세트리스트 두 단
   g.font = '28px "Bebas Neue", sans-serif';
   g.fillStyle = INK;
   const colX = [80, 400];
-  SETLIST.forEach((s, i) => {
+  MAIN_SETLIST.forEach((s, i) => {
     const col = i < 11 ? 0 : 1;
     const row = i % 11;
     g.fillStyle = '#9a948a';
-    g.fillText(String(i + 1).padStart(2, '0'), colX[col], ty + 250 + row * 33);
+    g.fillText(String(i + 1).padStart(2, '0'), colX[col], ty + 272 + row * 32);
     g.fillStyle = INK;
-    g.fillText(s.title.toUpperCase(), colX[col] + 42, ty + 250 + row * 33);
+    g.fillText(s.title.toUpperCase(), colX[col] + 42, ty + 272 + row * 32);
   });
 
   // 도장: 지운 연기 도장 위에 '입장 확인'

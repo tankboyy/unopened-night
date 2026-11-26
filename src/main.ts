@@ -11,10 +11,15 @@ import type { PerformerMotion } from './choreography.js';
 import { createCrowd } from './crowd.js';
 import { createMusicPlayer } from './music.js';
 import { createPerformer } from './performer.js';
-import { loadBodyModel } from './performer-body-model.js';
-import { loadHeadModel } from './performer-head-model.js';
+import { DON_TOLIVER_BODY, loadBodyModel, POST_MALONE_BODY } from './performer-body-model.js';
+import type { BodySpec } from './performer-body-model.js';
+import { DON_TOLIVER_HEAD, loadHeadModel, POST_MALONE_HEAD } from './performer-head-model.js';
+import type { HeadSpec } from './performer-head-model.js';
+import type { Performer } from './performer.js';
+import { createDjBooth } from './dj.js';
 import { createScrollStory } from './scroll-story.js';
-import { SETLIST } from './setlist.js';
+import { ARTIST_NAMES, MAIN_START_INDEX, SET_START_CLOCK_MIN, SETLIST } from './setlist.js';
+import type { Artist } from './setlist.js';
 import {
   FAR_CROWD_DESKTOP, FAR_CROWD_MOBILE, MOBILE_BREAKPOINT_PX, NEAR_CROWD_DESKTOP, NEAR_CROWD_MOBILE, PERFORMER_HEIGHT_M, SCRUB_SETTLE_MS,
   SIL_CROWD_DESKTOP, SIL_CROWD_MOBILE, STAGE_HEIGHT_M,
@@ -256,6 +261,13 @@ addEventListener('touchend', () => { touchY = null; });
 
 const listEl = $('#setlist');
 const songItems = SETLIST.map((song, i) => {
+  // 무대가 바뀌는 자리에 묶음 제목
+  if (i === 0 || i === MAIN_START_INDEX) {
+    const head = document.createElement('li');
+    head.className = 'set-head';
+    head.textContent = i === 0 ? `SPECIAL GUEST · ${ARTIST_NAMES['don-toliver'].toUpperCase()}` : ARTIST_NAMES['post-malone'].toUpperCase();
+    listEl.appendChild(head);
+  }
   const li = document.createElement('li');
   const b = document.createElement('button');
   b.type = 'button';
@@ -268,6 +280,9 @@ const songItems = SETLIST.map((song, i) => {
   listEl.appendChild(li);
   return li;
 });
+
+// 포스트 말론 무대 문구를 그 무대가 시작하는 스크롤 자리에 둔다
+$('#mainAct').style.top = `${fractionAt(MAIN_START_INDEX, 0) * 100}%`;
 
 const playBtn = $<HTMLButtonElement>('#playBtn');
 playBtn.addEventListener('click', () => {
@@ -283,19 +298,29 @@ playBtn.addEventListener('click', () => {
 });
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
-/** 20:00 에 시작해 타임라인 비율만큼 흐른 시각 */
+/** 무대 시각 — 게스트 20:00, 포스트 말론 21:20 부터 각자의 무대가 흐른 만큼(사이 무대 전환 시간은 스크롤에 넣지 않았다) */
 function showClock(fraction: number): string {
-  const min = Math.floor((fraction * timelineTotalSec()) / 60);
-  return `${pad2(20 + Math.floor(min / 60))}:${pad2(min % 60)}`;
+  const p = timelineAt(fraction);
+  const artist = SETLIST[p.songIndex].artist;
+  const first = SETLIST.findIndex((s) => s.artist === artist);
+  const before = fractionAt(p.songIndex, p.songTime) * timelineTotalSec() - fractionAt(first, 0) * timelineTotalSec();
+  const min = SET_START_CLOCK_MIN[artist] + Math.floor(before / 60);
+  return `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
 }
 
 function showSong(i: number): void {
   songIndex = i;
   const song = SETLIST[i];
   songItems.forEach((li, k) => { li.className = k < i ? 'done' : k === i ? 'current' : ''; });
+  // 36곡이라 패널이 넘친다 — 지금 곡이 패널 안에 보이게(페이지 스크롤은 건드리지 않게 패널만 움직인다)
+  const panel = listEl.parentElement!;
+  const cur = songItems[i];
+  if (cur.offsetTop < panel.scrollTop || cur.offsetTop > panel.scrollTop + panel.clientHeight - 40) panel.scrollTop = cur.offsetTop - panel.clientHeight / 3;
   $('#nowSong').textContent = song.title;
-  $('#nowFeat').textContent = song.feat ? `with ${song.feat}` : '';
-  $('#songNo').textContent = `${i + 1} / ${SETLIST.length}`;
+  $('#nowFeat').textContent = `${ARTIST_NAMES[song.artist]}${song.feat ? ` · with ${song.feat}` : ''}`;
+  const inSet = song.artist === 'don-toliver' ? i + 1 : i - MAIN_START_INDEX + 1;
+  const setSize = song.artist === 'don-toliver' ? MAIN_START_INDEX : SETLIST.length - MAIN_START_INDEX;
+  $('#songNo').textContent = `${song.artist === 'don-toliver' ? 'SPECIAL GUEST · ' : ''}${inSet} / ${setSize}`;
   imag.setTitle(song.title, song.feat);
   fx.setLook(song.look);
 }
@@ -303,17 +328,23 @@ function showSong(i: number): void {
 // ─── 부트 ───
 async function boot(): Promise<void> {
   const loadingText = $('#loadingText');
-  const [performerAvatar, crowdAvatars, headModel, bodyModel] = await Promise.all([
+  // 머리·몸 모델이 없어도 공연은 열린다 — 바탕 아바타·코드 캐리커처로 대신한다(비핵심)
+  const head = (spec: HeadSpec) => loadHeadModel(spec).catch((err: unknown) => { console.warn('[main] head model unavailable', spec.glb, err); return null; });
+  const body = (spec: BodySpec) => loadBodyModel(spec).catch((err: unknown) => { console.warn('[main] body model unavailable', spec.glb, err); return null; });
+  // 공연자마다 바탕 아바타(뼈대)를 따로 불러온다 — 한 뼈대를 둘이 나눠 쓰면 동작이 섞인다
+  const [pmAvatar, dtAvatar, crowdAvatars, pmHead, pmBody, dtHead, dtBody] = await Promise.all([
+    loadAvatar(PERFORMER_AVATAR_ID),
     loadAvatar(PERFORMER_AVATAR_ID),
     loadCrowdAvatars(),
-    // 머리·몸 모델이 없어도 공연은 열린다 — 바탕 아바타·코드 캐리커처로 대신한다(비핵심)
-    loadHeadModel().catch((err: unknown) => { console.warn('[main] head model unavailable', err); return null; }),
-    loadBodyModel().catch((err: unknown) => { console.warn('[main] body model unavailable', err); return null; }),
+    head(POST_MALONE_HEAD), body(POST_MALONE_BODY), head(DON_TOLIVER_HEAD), body(DON_TOLIVER_BODY),
   ]);
   loadingText.textContent = '조명 맞추는 중…';
 
-  const performer = createPerformer(performerAvatar, headModel, bodyModel);
-  scene.add(performer.root);
+  const performers: Record<Artist, Performer> = {
+    'post-malone': createPerformer(pmAvatar, pmHead, pmBody),
+    'don-toliver': createPerformer(dtAvatar, dtHead, dtBody),
+  };
+  for (const p of Object.values(performers)) scene.add(p.root);
   const crowd = createCrowd(crowdAvatars, {
     nearCount: MOBILE ? NEAR_CROWD_MOBILE : NEAR_CROWD_DESKTOP,
     farCount: MOBILE ? FAR_CROWD_MOBILE : FAR_CROWD_DESKTOP,
@@ -323,6 +354,8 @@ async function boot(): Promise<void> {
   scene.add(crowd.group);
   const band = createBand(crowdAvatars);
   scene.add(band.group);
+  const dj = createDjBooth(crowdAvatars[crowdAvatars.length - 1]);
+  scene.add(dj.group);
   $('#loading').classList.add('done');
 
   // 개발 전용: ?pose=sing 처럼 주면 공연자를 중앙에 세우고 그 동작만 반복한다(자세 확인용). ?face=1 은 얼굴 근접
@@ -391,10 +424,17 @@ async function boot(): Promise<void> {
     const st = performerStateInSong(pos.songIndex, pos.songTime, SETLIST[pos.songIndex].durationMs / 1000);
     if (debugPose) Object.assign(st, { motion: debugPose, x: 0, z: -48, facing: 0 });
 
-    performer.update(st, t, dt);
-    performer.setPresence(stage);
+    // 지금 곡의 주인만 무대에 선다 — 게스트 무대엔 DJ, 포스트 말론 무대엔 밴드
+    const artist = SETLIST[pos.songIndex].artist;
+    const performer = performers[artist];
+    for (const [who, p] of Object.entries(performers) as Array<[Artist, Performer]>) {
+      if (who === artist) p.update(st, t, dt);
+      p.setPresence(who === artist ? stage : 0);
+    }
     band.update(dt);
-    band.setPresence(stage);
+    band.setPresence(artist === 'post-malone' ? stage : 0);
+    dj.update(dt, t);
+    dj.setPresence(artist === 'don-toliver' ? stage : 0);
     crowd.update(t, dt);
     crowd.setLit(house);
     crowd.setPhones(phones * (1 - house * 0.92));

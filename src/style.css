@@ -40,7 +40,9 @@ body[data-phase='show'] #gl { cursor: grab; touch-action: pan-y; }
 .scene > * { pointer-events: auto; }
 .scene[data-phase='ticket'] { min-height: 100vh; }
 /* 공연 구간은 길게 — 방문자가 머물며 시점을 바꾸고 노래를 듣는 곳. 왼쪽은 세트리스트 패널 자리라 글은 오른쪽 아래로 */
-.scene.show { min-height: 1400vh; justify-content: flex-start; padding-top: 55vh; margin-left: auto; max-width: 380px; }
+.scene.show { position: relative; min-height: 2100vh; justify-content: flex-start; padding-top: 55vh; margin-left: auto; max-width: 380px; }
+/* 포스트 말론 무대 시작 자리 — top 은 main.ts 가 타임라인 비율로 정한다 */
+.scene.show .act { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; gap: 16px; padding-top: 45vh; }
 .time { font: 26px/1 var(--latin); letter-spacing: 0.08em; color: var(--spot); text-shadow: 0 2px 12px #000; }
 h1, h2 { font-family: var(--display); font-weight: 400; margin: 0; line-height: 1.1; text-wrap: balance; text-shadow: 0 4px 24px #000a; }
 h1 { font-size: clamp(48px, 9vw, 104px); }
@@ -121,7 +123,7 @@ button:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
   .show-bar .keys { display: none; } /* 폰에는 키보드가 없다 */
   .now .label { width: 100%; }
   .now .hint { display: none; }
-  .scene.show { min-height: 1400vh; margin-left: 0; max-width: none; padding-top: 20vh; }
+  .scene.show { min-height: 2100vh; margin-left: 0; max-width: none; padding-top: 20vh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .show-ui, .loading { transition: none; }
@@ -139,3 +141,5 @@ button:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
 .ticket-maker input:focus-visible { outline: 2px solid var(--spot); }
 .ticket-maker .play { font-weight: 700; border-color: var(--spot); color: var(--night); background: var(--spot); padding: 10px 16px; }
 .ticket-maker img { width: 100%; max-width: 360px; border-radius: 10px; box-shadow: 0 20px 60px #000a; }
+.setlist li.set-head { font: 11px/1.4 var(--body); letter-spacing: 0.12em; color: var(--spot); margin: 10px 0 2px; }
+.setlist li.set-head:first-child { margin-top: 0; }
